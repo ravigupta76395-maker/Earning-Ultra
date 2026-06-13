@@ -19,9 +19,5 @@
       "src": "/(.*)",
       "dest": "/public/$1"
     }
-  ],
-  "env": {
-    "WEBAPP_URL": "@webapp_url",
-    "ADMIN_TOKEN": "@admin_token"
-  }
+  ]
 }
