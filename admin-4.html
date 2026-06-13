@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EarnUltra Admin</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+  *{margin:0;padding:0;box-sizing:border-box;}
+  :root{--gold:#FFD700;--gold2:#FFA500;--bg:#07070F;--card:#111119;--card2:#18181F;--text:#FFF;--sub:#7777AA;--green:#00E676;--red:#FF4444;--purple:#7C3AED;}
+  body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;}
+
+  /* Login */
+  #login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;}
+  .login-logo{width:80px;height:80px;background:linear-gradient(135deg,var(--gold),var(--gold2));border-radius:22px;display:flex;align-items:center;justify-content:center;font-size:40px;margin-bottom:20px;}
+  .login-title{font-size:26px;font-weight:800;color:var(--gold);margin-bottom:6px;}
+  .login-sub{color:var(--sub);font-size:14px;margin-bottom:32px;}
+  .login-input{width:100%;max-width:320px;background:var(--card);border:1px solid #333;border-radius:14px;padding:14px 18px;color:#fff;font-size:16px;font-family:'Inter',sans-serif;outline:none;margin-bottom:12px;}
+  .login-input:focus{border-color:var(--gold);}
+  .login-btn{width:100%;max-width:320px;padding:15px;background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;font-weight:800;font-size:16px;border:none;border-radius:14px;cursor:pointer;}
+
+  /* Main Admin */
+  #admin-panel{display:none;}
+  .admin-header{background:linear-gradient(135deg,#0A0A1A,#0F0F20);padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #1A1A28;position:sticky;top:0;z-index:100;}
+  .admin-title{font-size:18px;font-weight:800;color:var(--gold);}
+  .admin-subtitle{font-size:12px;color:var(--sub);margin-top:2px;}
+  .logout-btn{background:var(--red);color:#fff;border:none;padding:8px 14px;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;}
+
+  /* Tabs */
+  .admin-tabs{display:flex;overflow-x:auto;background:var(--card);border-bottom:1px solid #1A1A28;gap:2px;padding:0 4px;scrollbar-width:none;}
+  .admin-tabs::-webkit-scrollbar{display:none;}
+  .admin-tab{padding:12px 16px;font-size:13px;font-weight:600;cursor:pointer;color:var(--sub);white-space:nowrap;border-bottom:2px solid transparent;transition:all 0.2s;}
+  .admin-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+
+  .tab-content{display:none;padding:20px;}
+  .tab-content.active{display:block;}
+
+  /* Cards */
+  .a-card{background:var(--card);border:1px solid #1A1A28;border-radius:18px;padding:18px;margin-bottom:14px;}
+  .a-card-title{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+  .a-label{font-size:12px;color:var(--sub);margin-bottom:6px;font-weight:500;}
+  .a-input{width:100%;background:#0A0A15;border:1px solid #2A2A3A;border-radius:10px;padding:11px 14px;color:#fff;font-size:14px;font-family:'Inter',sans-serif;outline:none;margin-bottom:12px;}
+  .a-input:focus{border-color:var(--gold);}
+  .a-select{width:100%;background:#0A0A15;border:1px solid #2A2A3A;border-radius:10px;padding:11px 14px;color:#fff;font-size:14px;outline:none;margin-bottom:12px;}
+  .a-btn{padding:11px 22px;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;transition:opacity 0.2s;}
+  .a-btn:hover{opacity:0.9;}
+  .a-btn.gold{background:linear-gradient(135deg,var(--gold),var(--gold2));color:#000;}
+  .a-btn.green{background:var(--green);color:#000;}
+  .a-btn.red{background:var(--red);color:#fff;}
+  .a-btn.purple{background:var(--purple);color:#fff;}
+  .a-btn.gray{background:var(--card2);color:var(--sub);border:1px solid #333;}
+  .a-btn.full{width:100%;}
+  .a-row{display:flex;gap:8px;margin-bottom:12px;}
+
+  /* Toggle */
+  .toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #1A1A28;}
+  .toggle-row:last-child{border-bottom:none;}
+  .toggle-info .toggle-label{font-size:14px;font-weight:600;}
+  .toggle-info .toggle-sub{font-size:12px;color:var(--sub);margin-top:2px;}
+  .toggle{width:48px;height:26px;background:#333;border-radius:13px;position:relative;cursor:pointer;transition:background 0.3s;flex-shrink:0;}
+  .toggle.on{background:var(--green);}
+  .toggle::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;background:#fff;border-radius:50%;transition:transform 0.3s;}
+  .toggle.on::after{transform:translateX(22px);}
+
+  /* Stats cards */
+  .stats-mini{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px;}
+  .stats-mini-card{background:var(--card2);border-radius:14px;padding:14px;text-align:center;}
+  .stats-mini-num{font-size:22px;font-weight:800;color:var(--gold);}
+  .stats-mini-lbl{font-size:11px;color:var(--sub);margin-top:3px;}
+
+  /* Table */
+  .table-wrap{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th{background:#0A0A15;color:var(--sub);padding:10px;text-align:left;font-weight:600;white-space:nowrap;}
+  td{padding:10px;border-bottom:1px solid #1A1A28;white-space:nowrap;}
+  tr:hover td{background:rgba(255,255,255,0.02);}
+
+  .badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+  .badge.success{background:rgba(0,230,118,0.15);color:var(--green);}
+  .badge.failed{background:rgba(255,68,68,0.15);color:var(--red);}
+  .badge.pending{background:rgba(255,165,0,0.15);color:var(--gold2);}
+
+  .channel-tag{background:var(--card2);border:1px solid #333;border-radius:10px;padding:8px 12px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;}
+  .tag-name{font-size:13px;font-weight:500;}
+  .tag-del{background:var(--red);color:#fff;border:none;padding:4px 10px;border-radius:6px;font-size:12px;cursor:pointer;}
+
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#222;color:#fff;padding:12px 24px;border-radius:30px;font-size:14px;font-weight:500;z-index:9999;opacity:0;transition:opacity 0.3s;pointer-events:none;white-space:nowrap;}
+  .toast.show{opacity:1;}
+
+  .section-sep{font-size:13px;color:var(--sub);font-weight:600;margin:16px 0 10px;text-transform:uppercase;letter-spacing:0.5px;}
+  .loading{text-align:center;padding:30px;color:var(--sub);}
+  .spinner{width:30px;height:30px;border:3px solid #222;border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 10px;}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .empty{text-align:center;padding:30px;color:var(--sub);font-size:14px;}
+</style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="login-screen">
+  <div class="login-logo">🛠️</div>
+  <div class="login-title">Admin Panel</div>
+  <div class="login-sub">EarnUltra Dashboard</div>
+  <input type="password" class="login-input" id="admin-token" placeholder="Enter Admin Password" onkeydown="if(event.key==='Enter')adminLogin()">
+  <button class="login-btn" onclick="adminLogin()">🔐 Login</button>
+</div>
+
+<!-- Admin Panel -->
+<div id="admin-panel">
+  <div class="admin-header">
+    <div>
+      <div class="admin-title">⚙️ EarnUltra Admin</div>
+      <div class="admin-subtitle">Control Panel</div>
+    </div>
+    <button class="logout-btn" onclick="logout()">Logout</button>
+  </div>
+
+  <div class="admin-tabs">
+    <div class="admin-tab active" onclick="switchTab('overview')">📊 Overview</div>
+    <div class="admin-tab" onclick="switchTab('users')">👥 Users</div>
+    <div class="admin-tab" onclick="switchTab('balance')">💰 Balance</div>
+    <div class="admin-tab" onclick="switchTab('broadcast')">📢 Broadcast</div>
+    <div class="admin-tab" onclick="switchTab('channels')">📡 Channels</div>
+    <div class="admin-tab" onclick="switchTab('withdrawal-settings')">💸 Withdrawal</div>
+    <div class="admin-tab" onclick="switchTab('payout')">💳 Payout</div>
+    <div class="admin-tab" onclick="switchTab('withdrawals')">📋 Requests</div>
+    <div class="admin-tab" onclick="switchTab('bot-settings')">🤖 Bot</div>
+  </div>
+
+  <!-- Overview -->
+  <div class="tab-content active" id="tab-overview">
+    <div class="stats-mini">
+      <div class="stats-mini-card"><div class="stats-mini-num" id="ov-users">-</div><div class="stats-mini-lbl">Total Users</div></div>
+      <div class="stats-mini-card"><div class="stats-mini-num" id="ov-paid">-</div><div class="stats-mini-lbl">Total Paid</div></div>
+      <div class="stats-mini-card"><div class="stats-mini-num" id="ov-wds">-</div><div class="stats-mini-lbl">Withdrawals</div></div>
+      <div class="stats-mini-card"><div class="stats-mini-num" id="ov-bal">-</div><div class="stats-mini-lbl">Total Balance</div></div>
+    </div>
+    <div class="a-card">
+      <div class="a-card-title">⚡ Quick Settings</div>
+      <div id="quick-toggles">
+        <div class="loading"><div class="spinner"></div>Loading...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Users -->
+  <div class="tab-content" id="tab-users">
+    <div class="a-card">
+      <div class="a-card-title">👥 All Users</div>
+      <div class="table-wrap">
+        <table id="users-table">
+          <thead><tr><th>User</th><th>Balance</th><th>Refs</th><th>Verified</th><th>Joined</th></tr></thead>
+          <tbody id="users-tbody"><tr><td colspan="5"><div class="loading"><div class="spinner"></div>Loading...</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Balance -->
+  <div class="tab-content" id="tab-balance">
+    <div class="a-card">
+      <div class="a-card-title">💰 Manage Balance</div>
+      <div class="a-label">Telegram User ID</div>
+      <input type="text" class="a-input" id="bal-userid" placeholder="Enter Telegram User ID">
+      <div class="a-label">Amount (₹)</div>
+      <input type="number" class="a-input" id="bal-amount" placeholder="Enter amount">
+      <div class="a-row">
+        <button class="a-btn green" onclick="manageBalance('add')" style="flex:1;">➕ Add Balance</button>
+        <button class="a-btn red" onclick="manageBalance('remove')" style="flex:1;">➖ Remove Balance</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Broadcast -->
+  <div class="tab-content" id="tab-broadcast">
+    <div class="a-card">
+      <div class="a-card-title">📢 Broadcast Message</div>
+      <div class="a-label">Message (Markdown supported)</div>
+      <textarea class="a-input" id="broadcast-msg" rows="5" placeholder="Enter your message..."></textarea>
+      <div class="a-row">
+        <button class="a-btn gold" onclick="broadcast('users')" style="flex:1;">📤 Send to All Users</button>
+        <button class="a-btn purple" onclick="broadcast('channel')" style="flex:1;">📡 Send to Channels</button>
+      </div>
+      <div id="broadcast-result"></div>
+    </div>
+  </div>
+
+  <!-- Channels -->
+  <div class="tab-content" id="tab-channels">
+    <div class="a-card">
+      <div class="a-card-title">📡 Telegram Channels</div>
+      <div class="a-label">Channel Name</div>
+      <input type="text" class="a-input" id="ch-name" placeholder="e.g. EarnUltra Official">
+      <div class="a-label">Channel ID (e.g. -1001234567890)</div>
+      <input type="text" class="a-input" id="ch-id" placeholder="e.g. @channelusername or -100123...">
+      <div class="a-label">Invite Link</div>
+      <input type="text" class="a-input" id="ch-invite" placeholder="https://t.me/...">
+      <button class="a-btn gold full" onclick="addChannel()">➕ Add Channel</button>
+      <div class="section-sep">Current Channels</div>
+      <div id="channel-list-admin"><div class="loading"><div class="spinner"></div>Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- Withdrawal Settings -->
+  <div class="tab-content" id="tab-withdrawal-settings">
+    <div class="a-card">
+      <div class="a-card-title">⚙️ Withdrawal Configuration</div>
+      <div class="a-label">Withdrawal API URL</div>
+      <textarea class="a-input" id="wd-api-url" rows="3" placeholder="https://ultra-pay.store/APIs/api?token=...&paytoNumber={number}&amount={amount}&comment=Pay"></textarea>
+      <div class="a-label">Min Withdrawal (₹)</div>
+      <input type="number" class="a-input" id="wd-min" placeholder="50">
+      <div class="a-label">Max Withdrawal (₹)</div>
+      <input type="number" class="a-input" id="wd-max" placeholder="10000">
+      <div class="a-label">Tax Percentage (%)</div>
+      <input type="number" class="a-input" id="wd-tax" placeholder="0" min="0" max="100">
+      <div class="a-label">Cooldown Time (Hours, 0 = disabled)</div>
+      <input type="number" class="a-input" id="wd-cooldown" placeholder="0" min="0">
+      <div class="a-label">Refer Bonus Amount (₹ per invite)</div>
+      <input type="number" class="a-input" id="ref-amount" placeholder="10">
+      <button class="a-btn gold full" onclick="saveWdSettings()">💾 Save Settings</button>
+    </div>
+    <div class="a-card">
+      <div class="a-card-title">🔒 Verification Mode</div>
+      <div class="a-label">Select verification type</div>
+      <select class="a-select" id="verify-mode">
+        <option value="device">📱 Device Verification (1 Device = 1 Account)</option>
+        <option value="none">🔓 No Verification</option>
+        <option value="captcha">🤖 Captcha Verification</option>
+      </select>
+      <button class="a-btn gold full" onclick="saveVerifyMode()">💾 Save Mode</button>
+    </div>
+  </div>
+
+  <!-- Payout -->
+  <div class="tab-content" id="tab-payout">
+    <div class="a-card">
+      <div class="a-card-title">💳 Payout Channel Settings</div>
+      <div class="a-label">Payout Channel ID (where withdrawal notifications go)</div>
+      <input type="text" class="a-input" id="payout-ch" placeholder="@channel or -100123...">
+      <div style="font-size:12px;color:var(--sub);margin:-8px 0 12px;line-height:1.5;">ℹ️ Bot must be admin in this channel. All withdrawal success/fail notifications will be sent here.</div>
+      <button class="a-btn gold full" onclick="savePayoutChannel()">💾 Set Payout Channel</button>
+    </div>
+  </div>
+
+  <!-- Withdrawals -->
+  <div class="tab-content" id="tab-withdrawals">
+    <div class="a-card">
+      <div class="a-card-title">📋 Withdrawal Requests</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>User</th><th>Amount</th><th>Tax</th><th>Final</th><th>Number</th><th>Status</th><th>Date</th></tr></thead>
+          <tbody id="wd-tbody"><tr><td colspan="7"><div class="loading"><div class="spinner"></div>Loading...</div></td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bot Settings -->
+  <div class="tab-content" id="tab-bot-settings">
+    <div class="a-card">
+      <div class="a-card-title">🤖 Bot Control</div>
+      <div id="bot-toggles">
+        <div class="loading"><div class="spinner"></div>Loading...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const ADMIN_TOKEN = 'earnultra_admin_2024';
+let currentToken = localStorage.getItem('eu_admin_token') || '';
+
+function showToast(msg, dur=2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), dur);
+}
+
+function fmtMoney(n) { return '₹' + Number(n||0).toLocaleString('en-IN', {minimumFractionDigits:2,maximumFractionDigits:2}); }
+
+async function api(url, opts = {}) {
+  const res = await fetch(url, {
+    ...opts,
+    headers: { 'Content-Type': 'application/json', 'x-admin-token': currentToken, ...(opts.headers || {}) }
+  });
+  return res.json();
+}
+
+function adminLogin() {
+  const token = document.getElementById('admin-token').value.trim();
+  if (token === ADMIN_TOKEN) {
+    currentToken = token;
+    localStorage.setItem('eu_admin_token', token);
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+    loadAll();
+  } else {
+    showToast('❌ Wrong password');
+  }
+}
+
+function logout() {
+  localStorage.removeItem('eu_admin_token');
+  currentToken = '';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('admin-panel').style.display = 'none';
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.admin-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  event.target.classList.add('active');
+}
+
+async function loadAll() {
+  loadOverview();
+  loadUsers();
+  loadWithdrawals();
+  loadSettings();
+  loadChannels();
+}
+
+async function loadOverview() {
+  const data = await api('/api/stats');
+  if (data.stats) {
+    document.getElementById('ov-users').textContent = data.stats.totalUsers?.toLocaleString('en-IN') || 0;
+    document.getElementById('ov-paid').textContent = fmtMoney(data.stats.totalWithdrawals);
+    document.getElementById('ov-wds').textContent = data.stats.withdrawalCount || 0;
+    document.getElementById('ov-bal').textContent = fmtMoney(data.stats.totalBalance);
+  }
+  loadQuickToggles();
+}
+
+async function loadQuickToggles() {
+  const data = await api('/api/admin/settings');
+  const s = data.settings || {};
+  const el = document.getElementById('quick-toggles');
+  el.innerHTML = `
+    ${makeToggle('Withdrawal', 'withdrawalEnabled', s.withdrawalEnabled, 'Allow users to withdraw funds')}
+    ${makeToggle('Bot Active', 'botEnabled', s.botEnabled, 'Enable/disable the Telegram bot')}
+  `;
+  loadBotToggles(s);
+}
+
+function makeToggle(label, key, val, sub) {
+  return `<div class="toggle-row">
+    <div class="toggle-info"><div class="toggle-label">${label}</div><div class="toggle-sub">${sub}</div></div>
+    <div class="toggle ${val?'on':''}" id="toggle-${key}" onclick="toggleSetting('${key}')"></div>
+  </div>`;
+}
+
+async function toggleSetting(key) {
+  const t = document.getElementById('toggle-' + key);
+  const isOn = t.classList.contains('on');
+  t.classList.toggle('on', !isOn);
+  await api('/api/admin/settings', { method: 'POST', body: JSON.stringify({ key, value: !isOn }) });
+  showToast(`✅ ${key} ${!isOn ? 'enabled' : 'disabled'}`);
+}
+
+function loadBotToggles(s) {
+  document.getElementById('bot-toggles').innerHTML = `
+    ${makeToggle('Bot Online', 'botEnabled', s.botEnabled, 'Turn bot on/off for all users')}
+    ${makeToggle('Withdrawals', 'withdrawalEnabled', s.withdrawalEnabled, 'Allow/disable all withdrawals')}
+  `;
+}
+
+async function loadUsers() {
+  const data = await api('/api/admin/users');
+  const tbody = document.getElementById('users-tbody');
+  if (!data.users?.length) { tbody.innerHTML = '<tr><td colspan="5"><div class="empty">No users yet</div></td></tr>'; return; }
+  tbody.innerHTML = data.users.map(u => `
+    <tr>
+      <td><strong>${u.firstName || u.username || 'User'}</strong><br><span style="color:var(--sub);font-size:11px;">${u.telegramId}</span></td>
+      <td style="color:var(--gold);font-weight:700;">${fmtMoney(u.balance)}</td>
+      <td>${u.referralCount || 0}</td>
+      <td>${u.verified ? '<span style="color:var(--green);">✅</span>' : '<span style="color:var(--red);">❌</span>'}</td>
+      <td style="color:var(--sub);font-size:12px;">${new Date(u.createdAt).toLocaleDateString('en-IN')}</td>
+    </tr>`).join('');
+}
+
+async function manageBalance(action) {
+  const userId = document.getElementById('bal-userid').value.trim();
+  const amount = parseFloat(document.getElementById('bal-amount').value);
+  if (!userId) { showToast('❌ Enter user ID'); return; }
+  if (!amount || amount <= 0) { showToast('❌ Enter valid amount'); return; }
+  const data = await api('/api/admin/balance', { method: 'POST', body: JSON.stringify({ telegramId: userId, amount, action }) });
+  if (data.success) {
+    showToast(`✅ Balance ${action === 'add' ? 'added' : 'removed'}! New: ${fmtMoney(data.newBalance)}`);
+    document.getElementById('bal-userid').value = '';
+    document.getElementById('bal-amount').value = '';
+    loadUsers();
+  } else showToast('❌ ' + (data.error || 'Failed'));
+}
+
+async function broadcast(type) {
+  const msg = document.getElementById('broadcast-msg').value.trim();
+  if (!msg) { showToast('❌ Enter a message'); return; }
+  const btn = event.target;
+  btn.textContent = '⏳ Sending...';
+  btn.disabled = true;
+  const data = await api('/api/admin/broadcast', { method: 'POST', body: JSON.stringify({ message: msg, type }) });
+  btn.disabled = false;
+  btn.textContent = type === 'users' ? '📤 Send to All Users' : '📡 Send to Channels';
+  if (data.success) {
+    showToast(`✅ Sent to ${data.sent} users`);
+    document.getElementById('broadcast-result').innerHTML = `<div style="color:var(--green);margin-top:10px;font-size:13px;">✅ Sent: ${data.sent} | ❌ Failed: ${data.failed || 0}</div>`;
+  } else showToast('❌ Broadcast failed');
+}
+
+async function loadChannels() {
+  const data = await api('/api/admin/settings');
+  const channels = data.settings?.channels || [];
+  const el = document.getElementById('channel-list-admin');
+  if (!channels.length) { el.innerHTML = '<div class="empty">No channels added</div>'; return; }
+  el.innerHTML = channels.map((ch, i) => `
+    <div class="channel-tag">
+      <div><div class="tag-name">📢 ${ch.name}</div><div style="font-size:11px;color:var(--sub);">${ch.id}</div></div>
+      <button class="tag-del" onclick="removeChannel(${i})">Remove</button>
+    </div>`).join('');
+}
+
+async function addChannel() {
+  const name = document.getElementById('ch-name').value.trim();
+  const id = document.getElementById('ch-id').value.trim();
+  const invite = document.getElementById('ch-invite').value.trim();
+  if (!name || !id || !invite) { showToast('❌ Fill all fields'); return; }
+  const data = await api('/api/admin/settings');
+  const channels = data.settings?.channels || [];
+  channels.push({ name, id, invite });
+  await api('/api/admin/settings', { method: 'POST', body: JSON.stringify({ key: 'channels', value: channels }) });
+  showToast('✅ Channel added!');
+  document.getElementById('ch-name').value = '';
+  document.getElementById('ch-id').value = '';
+  document.getElementById('ch-invite').value = '';
+  loadChannels();
+}
+
+async function removeChannel(index) {
+  const data = await api('/api/admin/settings');
+  const channels = data.settings?.channels || [];
+  channels.splice(index, 1);
+  await api('/api/admin/settings', { method: 'POST', body: JSON.stringify({ key: 'channels', value: channels }) });
+  showToast('✅ Channel removed');
+  loadChannels();
+}
+
+async function loadSettings() {
+  const data = await api('/api/admin/settings');
+  const s = data.settings || {};
+  document.getElementById('wd-api-url').value = s.withdrawalApi || '';
+  document.getElementById('wd-min').value = s.minWithdrawal || 50;
+  document.getElementById('wd-max').value = s.maxWithdrawal || 10000;
+  document.getElementById('wd-tax').value = s.taxPercent || 0;
+  document.getElementById('wd-cooldown').value = s.cooldownHours || 0;
+  document.getElementById('ref-amount').value = s.referAmount || 10;
+  document.getElementById('payout-ch').value = s.payoutChannel || '';
+  const verifyMode = document.getElementById('verify-mode');
+  if (verifyMode) verifyMode.value = s.verificationMode || 'device';
+}
+
+async function saveWdSettings() {
+  const settings = [
+    { key: 'withdrawalApi', value: document.getElementById('wd-api-url').value.trim() },
+    { key: 'minWithdrawal', value: parseFloat(document.getElementById('wd-min').value) || 50 },
+    { key: 'maxWithdrawal', value: parseFloat(document.getElementById('wd-max').value) || 10000 },
+    { key: 'taxPercent', value: parseFloat(document.getElementById('wd-tax').value) || 0 },
+    { key: 'cooldownHours', value: parseFloat(document.getElementById('wd-cooldown').value) || 0 },
+    { key: 'referAmount', value: parseFloat(document.getElementById('ref-amount').value) || 10 }
+  ];
+  for (const s of settings) await api('/api/admin/settings', { method: 'POST', body: JSON.stringify(s) });
+  showToast('✅ Settings saved!');
+}
+
+async function saveVerifyMode() {
+  const mode = document.getElementById('verify-mode').value;
+  await api('/api/admin/settings', { method: 'POST', body: JSON.stringify({ key: 'verificationMode', value: mode }) });
+  showToast('✅ Verification mode updated!');
+}
+
+async function savePayoutChannel() {
+  const ch = document.getElementById('payout-ch').value.trim();
+  await api('/api/admin/settings', { method: 'POST', body: JSON.stringify({ key: 'payoutChannel', value: ch }) });
+  showToast('✅ Payout channel saved!');
+}
+
+async function loadWithdrawals() {
+  const data = await api('/api/admin/withdrawals');
+  const tbody = document.getElementById('wd-tbody');
+  if (!data.withdrawals?.length) { tbody.innerHTML = '<tr><td colspan="7"><div class="empty">No withdrawals yet</div></td></tr>'; return; }
+  tbody.innerHTML = data.withdrawals.map(w => `
+    <tr>
+      <td>${w.username || w.telegramId}</td>
+      <td style="color:var(--gold);">₹${w.amount}</td>
+      <td style="color:var(--red);">₹${w.tax||0}</td>
+      <td style="color:var(--green);">₹${w.finalAmount}</td>
+      <td>${w.number}</td>
+      <td><span class="badge ${w.status}">${w.status}</span></td>
+      <td style="color:var(--sub);font-size:11px;">${new Date(w.createdAt).toLocaleDateString('en-IN')}</td>
+    </tr>`).join('');
+}
+
+// Auto-login if token stored
+if (currentToken === ADMIN_TOKEN) {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('admin-panel').style.display = 'block';
+  loadAll();
+}
+</script>
+</body>
+</html>
